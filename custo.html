@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Calculadora de Custo MercadoLivre</title>
+  <style>
+    :root{--bg:#f4f6fb;--card:#fff;--accent:#0b61ff;--muted:#6b7280}
+    *{box-sizing:border-box}
+    body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial; margin:0; background:linear-gradient(180deg,var(--bg),#eef2ff); color:#111}
+    .container{max-width:980px;margin:28px auto;padding:20px}
+    header{display:flex;align-items:center;gap:16px}
+    h1{margin:0;font-size:20px}
+    .card{background:var(--card);border-radius:12px;padding:18px;box-shadow:0 6px 18px rgba(12,30,60,0.06);margin-top:18px}
+    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+    label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+    input[type="number"],select{width:100%;padding:10px;border-radius:8px;border:1px solid #e6e9f2;font-size:15px}
+    .full{grid-column:1/-1}
+    .result{display:flex;gap:12px;align-items:center;justify-content:space-between}
+    .big{font-size:22px;font-weight:700}
+    .muted{color:var(--muted);font-size:13px}
+    .row{display:flex;gap:8px}
+    button{background:var(--accent);color:#fff;border:0;padding:10px 14px;border-radius:10px;font-weight:600;cursor:pointer}
+    button.ghost{background:transparent;color:var(--accent);border:1px solid rgba(11,97,255,0.12)}
+    footer{margin-top:14px;color:var(--muted);font-size:13px}
+    @media(max-width:720px){.grid{grid-template-columns:1fr}.result{flex-direction:column;align-items:flex-start}}
+    .small{font-size:12px;color:var(--muted)}
+    .chip{display:inline-block;padding:6px 10px;background:#f1f6ff;color:#073ea6;border-radius:999px;font-weight:600}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="chip">MercadoLivre</div>
+      <div>
+        <h1>Calculadora de Custo e Lucro</h1>
+        <div class="small">Coloque os valores do seu anúncio e veja o lucro líquido e margem.</div>
+      </div>
+    </header>
+
+    <div class="card">
+      <form id="form">
+        <div class="grid">
+          <div>
+            <label>Preço de venda (R$)</label>
+            <input type="number" step="0.01" id="price" value="100" required />
+          </div>
+
+          <div>
+            <label>Tipo de anúncio</label>
+            <select id="plan">
+              <option value="premium" data-fee="16">Premium (sugerido 16%)</option>
+              <option value="classico" data-fee="12">Clássico (sugerido 12%)</option>
+              <option value="custom" data-fee="0">Personalizado</option>
+            </select>
+          </div>
+
+          <div>
+            <label>% Tarifa Mercado Livre</label>
+            <input type="number" step="0.01" id="mlFeePercent" value="16" />
+          </div>
+
+          <div>
+            <label>Custo do produto (R$)</label>
+            <input type="number" step="0.01" id="cost" value="40" />
+          </div>
+
+          <div>
+            <label>Frete total (R$)</label>
+            <input type="number" step="0.01" id="freteTotal" value="25" />
+          </div>
+
+          <div>
+            <label>Frete subsidiado pelo vendedor (R$)</label>
+            <input type="number" step="0.01" id="freteSubs" value="12" />
+          </div>
+
+          <div>
+            <label>Embalagem (R$)</label>
+            <input type="number" step="0.01" id="embalagem" value="2" />
+          </div>
+
+          <div>
+            <label>Outros custos fixos (R$)</label>
+            <input type="number" step="0.01" id="outros" value="0" />
+          </div>
+
+          <div>
+            <label>% Impostos aproximado (sobre venda)</label>
+            <input type="number" step="0.01" id="impostosPercent" value="0" />
+          </div>
+
+          <div>
+            <label>% Mercado Pago (porcentagem)</label>
+            <input type="number" step="0.01" id="mpPercent" value="4.99" />
+          </div>
+
+          <div>
+            <label>Taxa fixa Mercado Pago (R$)</label>
+            <input type="number" step="0.01" id="mpFixed" value="0.4" />
+          </div>
+
+          <div class="full">
+            <label>Descrição rápida / Observações</label>
+            <input type="text" id="obs" placeholder="ex: promoção, frete grátis parcial, etc" />
+          </div>
+
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <div class="result">
+            <div>
+              <div class="muted">Receita bruta</div>
+              <div class="big" id="gross">R$ 0,00</div>
+            </div>
+
+            <div>
+              <div class="muted">Lucro líquido</div>
+              <div class="big" id="net">R$ 0,00</div>
+            </div>
+
+            <div>
+              <div class="muted">Margem líquida</div>
+              <div class="big" id="margin">0%</div>
+            </div>
+          </div>
+
+          <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+            <button type="button" id="calc">Calcular</button>
+            <button type="button" id="copy" class="ghost">Copiar resultado</button>
+            <button type="button" id="reset" class="ghost">Resetar</button>
+          </div>
+
+          <div style="margin-top:12px" id="breakdown" class="small muted">
+            ---
+          </div>
+        </div>
+
+      </form>
+    </div>
+
+    <footer>
+      Dica: ajuste a % da tarifa do Mercado Livre conforme a sua categoria e tipo de anúncio. Para publicar no Netlify, salve este arquivo como <strong>index.html</strong> e faça o deploy arrastando o arquivo.
+    </footer>
+  </div>
+
+  <script>
+    function fmt(v){return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+    function pct(v){return (Math.round(v*100)/100).toFixed(2)+'%'}
+
+    const priceEl=document.getElementById('price')
+    const planEl=document.getElementById('plan')
+    const mlFeePercentEl=document.getElementById('mlFeePercent')
+    const costEl=document.getElementById('cost')
+    const freteTotalEl=document.getElementById('freteTotal')
+    const freteSubsEl=document.getElementById('freteSubs')
+    const embalagemEl=document.getElementById('embalagem')
+    const outrosEl=document.getElementById('outros')
+    const impostosPercentEl=document.getElementById('impostosPercent')
+    const mpPercentEl=document.getElementById('mpPercent')
+    const mpFixedEl=document.getElementById('mpFixed')
+
+    const grossEl=document.getElementById('gross')
+    const netEl=document.getElementById('net')
+    const marginEl=document.getElementById('margin')
+    const breakdownEl=document.getElementById('breakdown')
+
+    planEl.addEventListener('change', ()=>{
+      const opt = planEl.selectedOptions[0]
+      const fee = Number(opt.dataset.fee)
+      if(planEl.value !== 'custom') mlFeePercentEl.value = fee
+    })
+
+    document.getElementById('calc').addEventListener('click', calcular)
+    document.getElementById('reset').addEventListener('click', ()=>{
+      document.getElementById('form').reset();
+      mlFeePercentEl.value = 16; priceEl.value=100; costEl.value=40; freteTotalEl.value=25; freteSubsEl.value=12; embalagemEl.value=2; mpPercentEl.value=4.99; mpFixedEl.value=0.4; impostosPercentEl.value=0; breakdownEl.textContent='---'; grossEl.textContent='R$ 0,00'; netEl.textContent='R$ 0,00'; marginEl.textContent='0%';
+    })
+
+    document.getElementById('copy').addEventListener('click', ()=>{
+      const text = `Preço: ${priceEl.value}\nLucro líquido: ${netEl.textContent}\nMargem: ${marginEl.textContent}\n${breakdownEl.textContent}`
+      navigator.clipboard && navigator.clipboard.writeText(text).then(()=> alert('Resultado copiado!'), ()=> alert('Não foi possível copiar'))
+    })
+
+    function calcular(){
+      const price = Number(priceEl.value) || 0
+      const mlPercent = Number(mlFeePercentEl.value) || 0
+      const cost = Number(costEl.value) || 0
+      const freteTotal = Number(freteTotalEl.value) || 0
+      const freteSubs = Number(freteSubsEl.value) || 0
+      const embalagem = Number(embalagemEl.value) || 0
+      const outros = Number(outrosEl.value) || 0
+      const impostosPercent = Number(impostosPercentEl.value) || 0
+      const mpPercent = Number(mpPercentEl.value) || 0
+      const mpFixed = Number(mpFixedEl.value) || 0
+
+      // Cálculos
+      const tarifaML = price * (mlPercent/100)
+      const mpFee = price * (mpPercent/100) + mpFixed
+      const impostos = price * (impostosPercent/100)
+      const receitaBruta = price
+
+      const custosTotais = tarifaML + mpFee + freteSubs + cost + embalagem + outros + impostos
+      const lucro = receitaBruta - custosTotais
+      const margem = receitaBruta ? (lucro / receitaBruta) * 100 : 0
+
+      grossEl.textContent = fmt(receitaBruta)
+      netEl.textContent = fmt(lucro)
+      marginEl.textContent = margem.toFixed(2) + '%'
+
+      breakdownEl.innerHTML = `
+        Tarifa Mercado Livre (${mlPercent.toFixed(2)}%): ${fmt(tarifaML)}<br>
+        Taxa Mercado Pago (${mpPercent.toFixed(2)}% + ${fmt(mpFixed)}): ${fmt(mpFee)}<br>
+        Impostos (${impostosPercent.toFixed(2)}%): ${fmt(impostos)}<br>
+        Frete subsidiado: ${fmt(freteSubs)} (Frete total: ${fmt(freteTotal)})<br>
+        Custo do produto: ${fmt(cost)}<br>
+        Embalagem: ${fmt(embalagem)}<br>
+        Outros: ${fmt(outros)}<br>
+        <strong>Total custos:</strong> ${fmt(custosTotais)}<br>
+        <strong>Lucro líquido:</strong> ${fmt(lucro)} (${margem.toFixed(2)}%)
+      `
+
+    }
+
+    // calcular ao abrir
+    calcular()
+  </script>
+</body>
+</html>
