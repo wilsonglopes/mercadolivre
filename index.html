@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Calculadora de Custo MercadoLivre</title>
+  <title>Calculadora de Custo MercadoLivre + Gerador de EAN</title>
   <style>
     :root{--bg:#f4f6fb;--card:#fff;--accent:#0b61ff;--muted:#6b7280}
     *{box-sizing:border-box}
@@ -14,7 +14,7 @@
     .card{background:var(--card);border-radius:12px;padding:18px;box-shadow:0 6px 18px rgba(12,30,60,0.06);margin-top:18px}
     .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
     label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
-    input[type="number"],select{width:100%;padding:10px;border-radius:8px;border:1px solid #e6e9f2;font-size:15px}
+    input[type="number"],input[type="text"],select{width:100%;padding:10px;border-radius:8px;border:1px solid #e6e9f2;font-size:15px}
     .full{grid-column:1/-1}
     .result{display:flex;gap:12px;align-items:center;justify-content:space-between}
     .big{font-size:22px;font-weight:700}
@@ -33,10 +33,24 @@
     <header>
       <div class="chip">MercadoLivre</div>
       <div>
-        <h1>Calculadora de Custo e Lucro</h1>
+        <h1>Calculadora de Custo e Lucro + Gerador de EAN</h1>
         <div class="small">Coloque os valores do seu anúncio e veja o lucro líquido e margem.</div>
       </div>
     </header>
+
+    <div class="card">
+      <div class="grid">
+        <div>
+          <label>EAN</label>
+          <input type="text" id="ean" placeholder="Clique para gerar" readonly />
+          <button type="button" id="genEan" style="margin-top:8px;background:#2ab7ca">📋 Gerar EAN</button>
+        </div>
+        <div>
+          <label>Marca</label>
+          <input type="text" id="marca" placeholder="Ex: HerbalVita" />
+        </div>
+      </div>
+    </div>
 
     <div class="card">
       <form id="form">
@@ -49,8 +63,8 @@
           <div>
             <label>Tipo de anúncio</label>
             <select id="plan">
-              <option value="premium" data-fee="17">Premium (sugerido 17%)</option>
-              <option value="classico" data-fee="13">Clássico (sugerido 13%)</option>
+              <option value="premium" data-fee="17">Premium (17%)</option>
+              <option value="classico" data-fee="13">Clássico (13%)</option>
               <option value="custom" data-fee="0">Personalizado</option>
             </select>
           </div>
@@ -86,12 +100,12 @@
           </div>
 
           <div>
-            <label>% Impostos aproximado (sobre venda)</label>
+            <label>% Impostos (sobre venda)</label>
             <input type="number" step="0.01" id="impostosPercent" value="0" />
           </div>
 
           <div>
-            <label>% Mercado Pago (porcentagem)</label>
+            <label>% Mercado Pago</label>
             <input type="number" step="0.01" id="mpPercent" value="4.99" />
           </div>
 
@@ -101,10 +115,9 @@
           </div>
 
           <div class="full">
-            <label>Descrição rápida / Observações</label>
+            <label>Descrição / Observações</label>
             <input type="text" id="obs" placeholder="ex: promoção, frete grátis parcial, etc" />
           </div>
-
         </div>
 
         <div class="card" style="margin-top:12px">
@@ -131,16 +144,13 @@
             <button type="button" id="reset" class="ghost">Resetar</button>
           </div>
 
-          <div style="margin-top:12px" id="breakdown" class="small muted">
-            ---
-          </div>
+          <div style="margin-top:12px" id="breakdown" class="small muted">---</div>
         </div>
-
       </form>
     </div>
 
     <footer>
-      Dica: ajuste a % da tarifa do Mercado Livre conforme a sua categoria e tipo de anúncio. Para publicar no Netlify, salve este arquivo como <strong>index.html</strong> e faça o deploy arrastando o arquivo.
+      Para publicar no Netlify, salve como <strong>index.html</strong> e faça o deploy arrastando o arquivo. Agora com <strong>gerador automático de EAN válidos</strong>!
     </footer>
   </div>
 
@@ -159,34 +169,33 @@
     const impostosPercentEl=document.getElementById('impostosPercent')
     const mpPercentEl=document.getElementById('mpPercent')
     const mpFixedEl=document.getElementById('mpFixed')
-
     const grossEl=document.getElementById('gross')
     const netEl=document.getElementById('net')
     const marginEl=document.getElementById('margin')
     const breakdownEl=document.getElementById('breakdown')
 
+    // Atualiza taxa ML
     planEl.addEventListener('change', ()=>{
       const opt = planEl.selectedOptions[0]
       const fee = Number(opt.dataset.fee)
       if(planEl.value !== 'custom') mlFeePercentEl.value = fee
     })
 
+    // Botões
     document.getElementById('calc').addEventListener('click', calcular)
     document.getElementById('reset').addEventListener('click', ()=>{
-      document.getElementById('form').reset();
-      mlFeePercentEl.value = 16; priceEl.value=100; costEl.value=40; freteTotalEl.value=25; freteSubsEl.value=12; embalagemEl.value=2; mpPercentEl.value=4.99; mpFixedEl.value=0.4; impostosPercentEl.value=0; breakdownEl.textContent='---'; grossEl.textContent='R$ 0,00'; netEl.textContent='R$ 0,00'; marginEl.textContent='0%';
+      document.getElementById('form').reset(); calcular();
     })
-
     document.getElementById('copy').addEventListener('click', ()=>{
       const text = `Preço: ${priceEl.value}\nLucro líquido: ${netEl.textContent}\nMargem: ${marginEl.textContent}\n${breakdownEl.textContent}`
-      navigator.clipboard && navigator.clipboard.writeText(text).then(()=> alert('Resultado copiado!'), ()=> alert('Não foi possível copiar'))
+      navigator.clipboard.writeText(text).then(()=> alert('Resultado copiado!'))
     })
 
+    // Função principal de cálculo
     function calcular(){
       const price = Number(priceEl.value) || 0
       const mlPercent = Number(mlFeePercentEl.value) || 0
       const cost = Number(costEl.value) || 0
-      const freteTotal = Number(freteTotalEl.value) || 0
       const freteSubs = Number(freteSubsEl.value) || 0
       const embalagem = Number(embalagemEl.value) || 0
       const outros = Number(outrosEl.value) || 0
@@ -194,35 +203,44 @@
       const mpPercent = Number(mpPercentEl.value) || 0
       const mpFixed = Number(mpFixedEl.value) || 0
 
-      // Cálculos
       const tarifaML = price * (mlPercent/100)
       const mpFee = price * (mpPercent/100) + mpFixed
       const impostos = price * (impostosPercent/100)
       const receitaBruta = price
-
       const custosTotais = tarifaML + mpFee + freteSubs + cost + embalagem + outros + impostos
       const lucro = receitaBruta - custosTotais
       const margem = receitaBruta ? (lucro / receitaBruta) * 100 : 0
 
       grossEl.textContent = fmt(receitaBruta)
       netEl.textContent = fmt(lucro)
-      marginEl.textContent = margem.toFixed(2) + '%'
+      marginEl.textContent = margem.toFixed(2)+'%'
 
-      breakdownEl.innerHTML = `
-        Tarifa Mercado Livre (${mlPercent.toFixed(2)}%): ${fmt(tarifaML)}<br>
-        Taxa Mercado Pago (${mpPercent.toFixed(2)}% + ${fmt(mpFixed)}): ${fmt(mpFee)}<br>
-        Impostos (${impostosPercent.toFixed(2)}%): ${fmt(impostos)}<br>
-        Frete subsidiado: ${fmt(freteSubs)} (Frete total: ${fmt(freteTotal)})<br>
-        Custo do produto: ${fmt(cost)}<br>
-        Embalagem: ${fmt(embalagem)}<br>
-        Outros: ${fmt(outros)}<br>
-        <strong>Total custos:</strong> ${fmt(custosTotais)}<br>
-        <strong>Lucro líquido:</strong> ${fmt(lucro)} (${margem.toFixed(2)}%)
-      `
-
+      breakdownEl.innerHTML = `Tarifa ML (${mlPercent}%): ${fmt(tarifaML)}<br>Mercado Pago (${mpPercent}% + ${fmt(mpFixed)}): ${fmt(mpFee)}<br>Impostos (${impostosPercent}%): ${fmt(impostos)}<br>Frete: ${fmt(freteSubs)}<br>Custo: ${fmt(cost)}<br>Embalagem: ${fmt(embalagem)}<br>Outros: ${fmt(outros)}<br><strong>Total custos:</strong> ${fmt(custosTotais)}<br><strong>Lucro líquido:</strong> ${fmt(lucro)} (${margem.toFixed(2)}%)`
     }
 
-    // calcular ao abrir
+    // Gerador de EAN válido (EAN-13)
+    document.getElementById('genEan').addEventListener('click', ()=>{
+      const ean = gerarEAN13()
+      document.getElementById('ean').value = ean
+    })
+
+    function gerarEAN13(){
+      let base = ''
+      for(let i=0;i<12;i++) base += Math.floor(Math.random()*10)
+      const check = calcularDigitoEAN(base)
+      return base + check
+    }
+
+    function calcularDigitoEAN(base){
+      let soma = 0
+      for(let i=0;i<base.length;i++){
+        const num = parseInt(base.charAt(i))
+        soma += (i%2===0) ? num : num*3
+      }
+      const resto = soma % 10
+      return resto === 0 ? 0 : 10 - resto
+    }
+
     calcular()
   </script>
 </body>
